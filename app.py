@@ -1,3 +1,4 @@
+import os
 import qrcode
 import sqlite3
 from flask import Flask, request, send_file, redirect
@@ -74,7 +75,11 @@ def scan_qr(qr_id):
 
     return redirect(target_url)
 
-app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+
 
 
 
