@@ -1,13 +1,15 @@
-import os
+from flask import Flask, request, send_file, redirect
 import qrcode
 import sqlite3
-from flask import Flask, request, send_file, redirect
+import os
 
 app = Flask(__name__)
 
-# -------- DATABASE SETUP --------
+# ---------- DATABASE ----------
 def get_db():
-    return sqlite3.connect("qr.db")
+    conn = sqlite3.connect("qr.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
     db = get_db()
@@ -15,8 +17,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS qr_codes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            target_url TEXT,
-            scan_count INTEGER DEFAULT 0
+            target_url TEXT NOT NULL
         )
     """)
     db.commit()
@@ -24,7 +25,12 @@ def init_db():
 
 init_db()
 
-# -------- GENERATE QR --------
+# ---------- HOME ----------
+@app.route("/")
+def home():
+    return "QR API is running 🚀"
+
+# ---------- CREATE QR ----------
 @app.route("/create")
 def create_qr():
     target_url = request.args.get("url")
@@ -42,45 +48,31 @@ def create_qr():
     db.commit()
     db.close()
 
-   qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
+    qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
 
     img = qrcode.make(qr_data)
     img.save("qr.png")
 
     return send_file("qr.png", mimetype="image/png")
 
-# -------- SCAN QR --------
+# ---------- SCAN QR ----------
 @app.route("/scan/<int:qr_id>")
 def scan_qr(qr_id):
     db = get_db()
     cursor = db.cursor()
-
     cursor.execute(
-        "SELECT target_url, scan_count FROM qr_codes WHERE id = ?",
+        "SELECT target_url FROM qr_codes WHERE id = ?",
         (qr_id,)
     )
     row = cursor.fetchone()
-
-    if not row:
-        return "Invalid QR", 404
-
-    target_url, scan_count = row
-    cursor.execute(
-        "UPDATE qr_codes SET scan_count = ? WHERE id = ?",
-        (scan_count + 1, qr_id)
-    )
-
-    db.commit()
     db.close()
 
-    return redirect(target_url)
+    if row is None:
+        return "QR not found", 404
 
+    return redirect(row["target_url"])
+
+# ---------- RUN ----------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-
-
-
-
