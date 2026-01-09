@@ -41,7 +41,8 @@ def create_qr():
     db.commit()
     db.close()
 
-    qr_data = f"http://127.0.0.1:5000/scan/{qr_id}"
+   qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
+
     img = qrcode.make(qr_data)
     img.save("qr.png")
 
@@ -74,5 +75,6 @@ def scan_qr(qr_id):
     return redirect(target_url)
 
 app.run(host="0.0.0.0", port=5000)
+
 
 
