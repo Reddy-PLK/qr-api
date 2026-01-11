@@ -1,63 +1,23 @@
-from flask import Flask, request, send_file, redirect, render_template
+from flask import Flask, render_template, send_file
 import qrcode
-import sqlite3
-import os
 from PIL import Image
+import io
+import os
 
 app = Flask(__name__)
 
-# ---------------- DATABASE ----------------
-def get_db():
-    conn = sqlite3.connect("qr.db")
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS qr_codes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            target_url TEXT NOT NULL
-        )
-    """)
-    db.commit()
-    db.close()
-
-init_db()
-
-# ---------------- HOME ----------------
 @app.route("/")
 def home():
-    return "QR Menu API is running 🚀"
+    return "QR Menu API is running"
 
-# ---------------- MENU PAGE ----------------
 @app.route("/menu")
 def menu():
     return render_template("menu.html")
 
-# ---------------- CREATE QR ----------------
-@app.route("/create")
-def create_qr():
-    target_url = request.args.get("url")
+@app.route("/qr")
+def generate_qr():
+    menu_url = "https://qr-api-md89.onrender.com/menu"
 
-    if not target_url:
-        return "Please provide url", 400
-
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO qr_codes (target_url) VALUES (?)",
-        (target_url,)
-    )
-    qr_id = cursor.lastrowid
-    db.commit()
-    db.close()
-
-    # IMPORTANT: your live Render URL
-    qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
-
-    # -------- QR SETTINGS --------
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -65,50 +25,31 @@ def create_qr():
         border=4,
     )
 
-    qr.add_data(qr_data)
+    qr.add_data(menu_url)
     qr.make(fit=True)
 
-    img = qr.make_image(
-        fill_color="#E1306C",   # CHANGE COLOR HERE
-        back_color="white"
-    ).convert("RGBA")
+    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
-    # -------- ADD LOGO --------
-    logo = Image.open("static/logo.png")
+    logo_path = os.path.join("static", "logo.png")
+    logo = Image.open(logo_path)
 
-    qr_width, qr_height = img.size
+    qr_width, qr_height = qr_img.size
     logo_size = qr_width // 4
     logo = logo.resize((logo_size, logo_size))
 
-    logo_position = (
+    pos = (
         (qr_width - logo_size) // 2,
         (qr_height - logo_size) // 2
     )
 
-    img.paste(logo, logo_position, mask=logo)
+    qr_img.paste(logo, pos, mask=logo if logo.mode == "RGBA" else None)
 
-    img.save("qr.png")
+    img_io = io.BytesIO()
+    qr_img.save(img_io, "PNG")
+    img_io.seek(0)
 
-    return send_file("qr.png", mimetype="image/png")
+    return send_file(img_io, mimetype="image/png")
 
-# ---------------- SCAN QR ----------------
-@app.route("/scan/<int:qr_id>")
-def scan_qr(qr_id):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "SELECT target_url FROM qr_codes WHERE id = ?",
-        (qr_id,)
-    )
-    row = cursor.fetchone()
-    db.close()
 
-    if row is None:
-        return "QR not found", 404
-
-    return redirect(row["target_url"])
-
-# ---------------- RUN ----------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
