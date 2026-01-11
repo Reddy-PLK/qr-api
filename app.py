@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, redirect
+from flask import Flask, request, send_file, redirect, render_template
 import qrcode
 import sqlite3
 import os
@@ -29,7 +29,12 @@ init_db()
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
-    return "Custom QR API is running 🚀"
+    return "QR Menu API is running 🚀"
+
+# ---------------- MENU PAGE ----------------
+@app.route("/menu")
+def menu():
+    return render_template("menu.html")
 
 # ---------------- CREATE QR ----------------
 @app.route("/create")
@@ -49,10 +54,10 @@ def create_qr():
     db.commit()
     db.close()
 
-    # 👉 THIS IS YOUR LIVE QR LINK
+    # IMPORTANT: your live Render URL
     qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
 
-    # --------- QR STYLE SETTINGS (CHANGE HERE) ---------
+    # -------- QR SETTINGS --------
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -64,16 +69,15 @@ def create_qr():
     qr.make(fit=True)
 
     img = qr.make_image(
-        fill_color="#blue",  # 🔴 CHANGE COLOR HERE
+        fill_color="#E1306C",   # CHANGE COLOR HERE
         back_color="white"
     ).convert("RGBA")
 
-    # --------- ADD LOGO ---------
+    # -------- ADD LOGO --------
     logo = Image.open("static/logo.png")
 
     qr_width, qr_height = img.size
     logo_size = qr_width // 4
-
     logo = logo.resize((logo_size, logo_size))
 
     logo_position = (
@@ -108,4 +112,3 @@ def scan_qr(qr_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
