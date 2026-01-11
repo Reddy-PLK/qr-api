@@ -64,7 +64,7 @@ def create_qr():
     qr.make(fit=True)
 
     img = qr.make_image(
-        fill_color="#E1306C",  # 🔴 CHANGE COLOR HERE
+        fill_color="#blue",  # 🔴 CHANGE COLOR HERE
         back_color="white"
     ).convert("RGBA")
 
@@ -108,3 +108,4 @@ def scan_qr(qr_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
