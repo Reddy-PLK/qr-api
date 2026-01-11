@@ -2,10 +2,11 @@ from flask import Flask, request, send_file, redirect
 import qrcode
 import sqlite3
 import os
+from PIL import Image
 
 app = Flask(__name__)
 
-# ---------- DATABASE ----------
+# ---------------- DATABASE ----------------
 def get_db():
     conn = sqlite3.connect("qr.db")
     conn.row_factory = sqlite3.Row
@@ -25,12 +26,12 @@ def init_db():
 
 init_db()
 
-# ---------- HOME ----------
+# ---------------- HOME ----------------
 @app.route("/")
 def home():
-    return "QR API is running 🚀"
+    return "Custom QR API is running 🚀"
 
-# ---------- CREATE QR ----------
+# ---------------- CREATE QR ----------------
 @app.route("/create")
 def create_qr():
     target_url = request.args.get("url")
@@ -48,14 +49,45 @@ def create_qr():
     db.commit()
     db.close()
 
+    # 👉 THIS IS YOUR LIVE QR LINK
     qr_data = f"https://qr-api-md89.onrender.com/scan/{qr_id}"
 
-    img = qrcode.make(qr_data)
+    # --------- QR STYLE SETTINGS (CHANGE HERE) ---------
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+
+    img = qr.make_image(
+        fill_color="#E1306C",  # 🔴 CHANGE COLOR HERE
+        back_color="white"
+    ).convert("RGBA")
+
+    # --------- ADD LOGO ---------
+    logo = Image.open("static/logo.png")
+
+    qr_width, qr_height = img.size
+    logo_size = qr_width // 4
+
+    logo = logo.resize((logo_size, logo_size))
+
+    logo_position = (
+        (qr_width - logo_size) // 2,
+        (qr_height - logo_size) // 2
+    )
+
+    img.paste(logo, logo_position, mask=logo)
+
     img.save("qr.png")
 
     return send_file("qr.png", mimetype="image/png")
 
-# ---------- SCAN QR ----------
+# ---------------- SCAN QR ----------------
 @app.route("/scan/<int:qr_id>")
 def scan_qr(qr_id):
     db = get_db()
@@ -72,7 +104,7 @@ def scan_qr(qr_id):
 
     return redirect(row["target_url"])
 
-# ---------- RUN ----------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
