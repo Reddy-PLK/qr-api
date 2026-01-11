@@ -1,3 +1,6 @@
 flask
 qrcode
 pillow
+Flask
+qrcode[pil]
+Pillow
