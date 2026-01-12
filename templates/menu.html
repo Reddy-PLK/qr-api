@@ -1,31 +1,164 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Menu</title>
+    <meta charset="UTF-8">
+    <title>REDDY'S Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
         body {
-            font-family: Arial;
-            background: #f4f4f4;
-            text-align: center;
-            padding: 30px;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #eaf2ff;
         }
+
+        /* HEADER */
+        header {
+            background-color: #0a3d91;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 30px;
+            letter-spacing: 3px;
+        }
+
+        /* CONTAINER */
+        .container {
+            padding: 20px;
+            background-image: url("/static/flowers.png");
+            background-repeat: repeat;
+        }
+
+        /* MENU ITEM CARD */
         .item {
             background: white;
-            padding: 15px;
-            margin: 10px auto;
-            max-width: 400px;
-            border-radius: 10px;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .item-price {
+            color: #444;
+            margin-top: 4px;
+        }
+
+        /* + - CONTROLS */
+        .controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .controls button {
+            background-color: #0a3d91;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            font-size: 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .qty {
+            margin: 0 10px;
+            font-size: 16px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* CART */
+        .cart {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .cart p {
+            margin: 6px 0;
+            font-size: 16px;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
+
 <body>
 
-<h1>🍔 My Restaurant Menu</h1>
+<header>
+    REDDY'S
+</header>
 
-<div class="item">Burger – ₹150</div>
-<div class="item">Pizza – ₹250</div>
-<div class="item">Pasta – ₹200</div>
-<div class="item">Cold Drink – ₹50</div>
+<div class="container">
+
+    {% for item in menu %}
+    <div class="item">
+        <div>
+            <div class="item-name">{{ item.name }}</div>
+            <div class="item-price">₹{{ item.price }}</div>
+        </div>
+
+        <div class="controls">
+            <button onclick="removeItem({{ item.id }}, {{ item.price }})">−</button>
+            <div class="qty" id="qty-{{ item.id }}">0</div>
+            <button onclick="addItem({{ item.id }}, {{ item.price }})">+</button>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="cart">
+        <p>Subtotal: ₹<span id="subtotal">0.00</span></p>
+        <p>GST (18%): ₹<span id="gst">0.00</span></p>
+        <p class="total">Total: ₹<span id="total">0.00</span></p>
+    </div>
+
+</div>
+
+<script>
+    let cart = {};
+    let subtotal = 0;
+    const GST_RATE = 0.18;  // 🔹 CHANGE GST HERE IF NEEDED
+
+    function addItem(id, price) {
+        cart[id] = (cart[id] || 0) + 1;
+        subtotal += price;
+        document.getElementById("qty-" + id).innerText = cart[id];
+        updateTotals();
+    }
+
+    function removeItem(id, price) {
+        if (!cart[id] || cart[id] === 0) return;
+
+        cart[id]--;
+        subtotal -= price;
+
+        if (subtotal < 0) subtotal = 0;
+
+        document.getElementById("qty-" + id).innerText = cart[id];
+        updateTotals();
+    }
+
+    function updateTotals() {
+        let gst = subtotal * GST_RATE;
+        let total = subtotal + gst;
+
+        document.getElementById("subtotal").innerText = subtotal.toFixed(2);
+        document.getElementById("gst").innerText = gst.toFixed(2);
+        document.getElementById("total").innerText = total.toFixed(2);
+    }
+</script>
 
 </body>
 </html>
