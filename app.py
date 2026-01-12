@@ -1,76 +1,89 @@
 from flask import Flask, send_file, render_template
 import qrcode
+from qrcode.constants import ERROR_CORRECT_H
 from PIL import Image
-import io
 import os
 
 app = Flask(__name__)
 
+# ===============================
+# HOME CHECK
+# ===============================
 @app.route("/")
 def home():
-    return "QR Menu App is running"
+    return "QR API is live ✅"
 
+# ===============================
+# MENU PAGE (WHAT QR OPENS)
+# ===============================
 @app.route("/menu")
 def menu():
     return render_template("menu.html")
 
+# ===============================
+# GENERATE QR CODE
+# ===============================
 @app.route("/qr")
 def generate_qr():
-
-    menu_url = "https://qr-api-md89.onrender.com/menu"
-
-    # 🎨 QR COLORS (CHANGE HERE)
-    qr_foreground_color = "white"
-    qr_background_color = "blue"
+    # 🔗 URL that QR will open
+    qr_url = "https://qr-api-md89.onrender.com/menu"
 
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,  # REQUIRED FOR LOGO
+        error_correction=ERROR_CORRECT_H,  # REQUIRED for logo
         box_size=12,
-        border=4
+        border=4,
     )
 
-    qr.add_data(menu_url)
+    qr.add_data(qr_url)
     qr.make(fit=True)
 
+    # 🎨 CUSTOM QR COLORS (CHANGE HERE)
     qr_img = qr.make_image(
-        fill_color=qr_foreground_color,
-        back_color=qr_background_color
+        fill_color="white",   # QR color (black)
+        back_color="blue"      # Background
     ).convert("RGBA")
 
-    # 🖼 CENTER LOGO
+    # ===============================
+    # ADD LOGO IN CENTER
+    # ===============================
     logo_path = os.path.join(app.root_path, "static", "logo.png")
 
-   if os.path.exists(logo_path):
-    logo = Image.open(logo_path).convert("RGBA")
+    if os.path.exists(logo_path):
+        logo = Image.open(logo_path).convert("RGBA")
 
-    qr_width, qr_height = qr_img.size
+        qr_width, qr_height = qr_img.size
 
-    # 🔽 MUCH SMALLER LOGO
-    logo_size = qr_width // 6
-    logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+        # 🔽 Logo size (VERY IMPORTANT)
+        logo_size = qr_width // 5
+        logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
 
-    # ⚪ White background behind logo
-    bg_size = logo_size + 20
-    background = Image.new("RGBA", (bg_size, bg_size), "white")
+        # ⚪ White padding behind logo
+        padding = 20
+        bg_size = logo_size + padding
 
-    bg_pos = ((bg_size - logo_size) // 2, (bg_size - logo_size) // 2)
-    background.paste(logo, bg_pos, logo)
+        background = Image.new("RGBA", (bg_size, bg_size), "white")
 
-    pos = (
-        (qr_width - bg_size) // 2,
-        (qr_height - bg_size) // 2
-    )
+        pos = ((bg_size - logo_size) // 2, (bg_size - logo_size) // 2)
+        background.paste(logo, pos, logo)
 
-    qr_img.paste(background, pos, background)
+        center = (
+            (qr_width - bg_size) // 2,
+            (qr_height - bg_size) // 2
+        )
 
+        qr_img.paste(background, center, background)
 
-    img_io = io.BytesIO()
-    qr_img.save(img_io, "PNG")
-    img_io.seek(0)
+    # ===============================
+    # SAVE & SEND IMAGE
+    # ===============================
+    output_path = "qr.png"
+    qr_img.save(output_path)
 
-    return send_file(img_io, mimetype="image/png")
+    return send_file(output_path, mimetype="image/png")
 
+# ===============================
+# RENDER / GUNICORN ENTRY POINT
+# ===============================
 if __name__ == "__main__":
-    app.run()
-
+    app.run(host="0.0.0.0", port=10000)
