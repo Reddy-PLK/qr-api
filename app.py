@@ -1,4 +1,4 @@
-from flask import Flask, send_file, render_template
+from flask import Flask, send_file, render_template, request
 import qrcode
 from PIL import Image
 import io
@@ -9,51 +9,62 @@ app = Flask(__name__)
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
-    return "QR Menu API is running"
+    return "QR Menu App is running"
 
-# ---------------- MENU ----------------
+# ---------------- MENU PAGE ----------------
 @app.route("/menu")
 def menu():
     return render_template("menu.html")
 
-# ---------------- QR ----------------
+# ---------------- QR GENERATOR ----------------
 @app.route("/qr")
 def generate_qr():
+
+    # 🔗 THIS IS THE PAGE YOUR QR WILL OPEN
     menu_url = "https://qr-api-md89.onrender.com/menu"
 
+    # 🎨 ===============================
+    # 🎨 QR COLORS — CHANGE HERE ONLY
+    # 🎨 ===============================
+    qr_foreground_color = "#ff5733"     # examples: "black", "blue", "#ff5733"
+    qr_background_color = "#1abc9c"     # examples: "white", "black", "#f2f2f2"
+
+    # Create QR
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=12,
-        border=4,
+        border=4
     )
 
     qr.add_data(menu_url)
     qr.make(fit=True)
 
     qr_img = qr.make_image(
-        fill_color="black",
-        back_color="white"
-    ).convert("RGB")
+        fill_color=qr_foreground_color,
+        back_color=qr_background_color
+    ).convert("RGBA")
 
-    # ---------- TRY TO ADD LOGO ----------
+    # 🖼 ===============================
+    # 🖼 LOGO (OPTIONAL)
+    # 🖼 ===============================
     logo_path = os.path.join(app.root_path, "static", "logo.png")
 
     if os.path.exists(logo_path):
-        logo = Image.open(logo_path)
+        logo = Image.open(logo_path).convert("RGBA")
 
         qr_width, qr_height = qr_img.size
         logo_size = qr_width // 4
         logo = logo.resize((logo_size, logo_size))
 
-        pos = (
+        position = (
             (qr_width - logo_size) // 2,
             (qr_height - logo_size) // 2
         )
 
-        qr_img.paste(logo, pos, mask=logo if logo.mode == "RGBA" else None)
+        qr_img.paste(logo, position, mask=logo)
 
-    # ---------- SEND IMAGE ----------
+    # 📤 SEND IMAGE
     img_io = io.BytesIO()
     qr_img.save(img_io, "PNG")
     img_io.seek(0)
