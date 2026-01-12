@@ -26,8 +26,8 @@ def generate_qr():
     # 🎨 ===============================
     # 🎨 QR COLORS — CHANGE HERE ONLY
     # 🎨 ===============================
-    qr_foreground_color = "#ff5733"     # examples: "black", "blue", "#ff5733"
-    qr_background_color = "#1abc9c"     # examples: "white", "black", "#f2f2f2"
+    qr_foreground_color = "red"     # examples: "black", "blue", "#ff5733"
+    qr_background_color = "blue"     # examples: "white", "black", "#f2f2f2"
 
     # Create QR
     qr = qrcode.QRCode(
@@ -74,3 +74,4 @@ def generate_qr():
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run()
+
