@@ -41,22 +41,29 @@ def generate_qr():
     # 🖼 CENTER LOGO
     logo_path = os.path.join(app.root_path, "static", "logo.png")
 
-    if os.path.exists(logo_path):
-        logo = Image.open(logo_path).convert("RGBA")
+   if os.path.exists(logo_path):
+    logo = Image.open(logo_path).convert("RGBA")
 
-        # 🔧 LOGO SIZE (CHANGE IF NEEDED)
-        qr_width, qr_height = qr_img.size
-        logo_size = qr_width // 4   # 1/4 of QR width (SAFE SIZE)
+    qr_width, qr_height = qr_img.size
 
-        logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+    # 🔽 MUCH SMALLER LOGO
+    logo_size = qr_width // 6
+    logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
 
-        # 📐 PERFECT CENTER POSITION
-        position = (
-            (qr_width - logo_size) // 2,
-            (qr_height - logo_size) // 2
-        )
+    # ⚪ White background behind logo
+    bg_size = logo_size + 20
+    background = Image.new("RGBA", (bg_size, bg_size), "white")
 
-        qr_img.paste(logo, position, mask=logo)
+    bg_pos = ((bg_size - logo_size) // 2, (bg_size - logo_size) // 2)
+    background.paste(logo, bg_pos, logo)
+
+    pos = (
+        (qr_width - bg_size) // 2,
+        (qr_height - bg_size) // 2
+    )
+
+    qr_img.paste(background, pos, background)
+
 
     img_io = io.BytesIO()
     qr_img.save(img_io, "PNG")
@@ -66,3 +73,4 @@ def generate_qr():
 
 if __name__ == "__main__":
     app.run()
+
